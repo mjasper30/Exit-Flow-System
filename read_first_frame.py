@@ -12,7 +12,7 @@ image_path = os.path.join(IMAGES_DIR, 'first_frame.jpg')  # Replace 'your_image.
 output_image_path = os.path.join(OUTPUT_IMAGES_DIR, 'output_image.jpg')
 
 # Load a model
-model_path = os.path.join('.', 'models', 'yolov8x.pt')
+model_path = os.path.join('.', 'models', 'best.pt')
 model = YOLO(model_path)  # load a custom model
 
 # Read the input image
@@ -26,10 +26,8 @@ threshold = 0.5
 
 # Define a dictionary mapping class IDs to background colors
 background_colors = {
-    2: (0, 0, 255),    
-    3: (0, 255, 255),
-    5: (0, 0, 255),
-    7: (0, 255, 255),
+    0: (0, 0, 255),    
+    1: (0, 255, 255),
 }
 
 car_count = 0  # Initialize car count

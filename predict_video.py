@@ -4,8 +4,8 @@ import cv2
 
 VIDEOS_DIR = os.path.join('.', 'videos')
 
-video_path = os.path.join(VIDEOS_DIR, 'vehicle-counting.mp4')
-video_path_out = 'videos/vehicle-counting-output.mp4'
+video_path = os.path.join(VIDEOS_DIR, 'test.mp4')
+video_path_out = 'videos/test-output.mp4'
 
 cap = cv2.VideoCapture(video_path)
 ret, frame = cap.read()
@@ -13,7 +13,7 @@ H, W, _ = frame.shape
 out = cv2.VideoWriter(video_path_out, cv2.VideoWriter_fourcc(
     *'MP4V'), int(cap.get(cv2.CAP_PROP_FPS)), (W, H))
 
-model_path = os.path.join('.', 'models', 'yolov8x.pt')
+model_path = os.path.join('.', 'models', 'best.pt')
 
 # Load a model
 model = YOLO(model_path)  # load a custom model
@@ -22,15 +22,13 @@ threshold = 0.5
 
 # Set the y-coordinate for the horizontal line
 line_y = int(H * 0.7)
-car_count = 0
+plastic_bag_count = 0
 objects_crossed_line = set()
 
 # Define a dictionary mapping class IDs to background colors
 background_colors = {
-    2: (0, 0, 255),
-    3: (0, 255, 255),
-    5: (0, 0, 255),
-    7: (0, 255, 255),
+    0: (0, 0, 255),    
+    1: (0, 255, 255),
 }
 
 while ret:
@@ -43,7 +41,7 @@ while ret:
             center_y = (y1 + y2) / 2
             if center_y > line_y and int(class_id) not in objects_crossed_line:
                 objects_crossed_line.add(int(class_id))
-                car_count += 1
+                plastic_bag_count += 1
 
             class_label = results.names[int(class_id)].upper()
             text = f'{class_label} {score:.2f}'
@@ -67,11 +65,11 @@ while ret:
                         cv2.FONT_HERSHEY_SIMPLEX, 2, color, 5, cv2.LINE_AA)
 
     # Draw the car count on the side
-    car_count_text = f"Number of plastic bag: {car_count}"
-    cv2.putText(frame, car_count_text, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5, cv2.LINE_AA)
+    plastic_bag_count_text = f"Number of plastic bag: {plastic_bag_count}"
+    cv2.putText(frame, plastic_bag_count_text, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5, cv2.LINE_AA)
 
     # Draw the car count on the side
-    cartonbox_count_text = f"Number of carton box: {car_count}"
+    cartonbox_count_text = f"Number of carton box: 0"
     cv2.putText(frame, cartonbox_count_text, (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 5, cv2.LINE_AA)
 
     # Draw a horizontal line indicating the number of cars passing by
@@ -85,7 +83,7 @@ while ret:
     ret, frame = cap.read()
 
 # Print the final car count on the console
-print(f"Total Cars: {car_count}")
+print(f"Total Plastic Bag: {plastic_bag_count}")
 
 # Release video capture and writer
 cap.release()
