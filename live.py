@@ -8,8 +8,12 @@ cap = cv2.VideoCapture(0)  # Use the default camera (device index 0)
 ret, frame = cap.read()
 H, W, _ = frame.shape
 
-# Path for output video
-video_path_out = 'videos/live_output.mp4'
+# Define the desired resolution
+desired_width = 640
+desired_height = 480
+
+# Resize the frame
+frame = cv2.resize(frame, (desired_width, desired_height))
 
 # Define the model path
 model_path = os.path.join('.', 'models', 'best1.pt')
@@ -20,7 +24,7 @@ model = YOLO(model_path)  # Load a custom model
 threshold = 0.5
 
 # Set the y-coordinate for the horizontal line
-line_y = int(H * 0.7)
+line_y = int(desired_height * 0.7)
 plastic_bags_crossed_line = set()
 
 # Define a dictionary mapping class IDs to background colors
@@ -28,10 +32,6 @@ background_colors = {
     0: (0, 0, 255),    
     1: (0, 255, 255),
 }
-
-# Create a video writer
-out = cv2.VideoWriter(video_path_out, cv2.VideoWriter_fourcc(
-    *'MP4V'), 30, (W, H))
 
 while ret:
     results = model(frame)[0]
@@ -72,9 +72,6 @@ while ret:
     # Draw a horizontal line indicating the threshold line
     cv2.line(frame, (0, line_y), (frame.shape[1], line_y), (255, 0, 255), 2)
 
-    # Write the frame to the output video
-    out.write(frame)
-
     # Show the processed frame
     cv2.imshow('Frame', frame)
 
@@ -88,7 +85,6 @@ while ret:
 # Print the final plastic bag count on the console
 print(f"Total Plastic Bags: {len(plastic_bags_crossed_line)}")
 
-# Release video capture and writer
+# Release video capture
 cap.release()
-out.release()
 cv2.destroyAllWindows()
