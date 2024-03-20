@@ -4,8 +4,8 @@ import cv2
 
 VIDEOS_DIR = os.path.join('.', 'videos')
 
-video_path = os.path.join(VIDEOS_DIR, 'oneblue.mp4')
-video_path_out = 'videos/oneblue-output.mp4'
+video_path = os.path.join(VIDEOS_DIR, 'twoblue.mp4')
+video_path_out = 'videos/twoblue-output.mp4'
 
 cap = cv2.VideoCapture(video_path)
 ret, frame = cap.read()
@@ -43,7 +43,7 @@ while ret:
                 plastic_bags_crossed_line.add(int(idx+1))
 
             class_label = results.names[int(class_id)].upper()
-            text = f'{class_label} {score:.2f}'  # Include idx+1 as ID
+            text = f'{class_label} {idx+1} {score:.2f}'  # Include idx+1 as ID
 
             # Get the size of the text
             (text_width, text_height), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)

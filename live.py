@@ -2,27 +2,25 @@ import os
 from ultralytics import YOLO
 import cv2
 
-VIDEOS_DIR = os.path.join('.', 'videos')
+# No need to specify the path for live camera
 
-video_path = os.path.join(VIDEOS_DIR, 'oneblue.mp4')
-video_path_out = 'videos/oneblue-output.mp4'
-
-cap = cv2.VideoCapture(video_path)
+cap = cv2.VideoCapture(0)  # Use the default camera (device index 0)
 ret, frame = cap.read()
 H, W, _ = frame.shape
-out = cv2.VideoWriter(video_path_out, cv2.VideoWriter_fourcc(
-    *'MP4V'), int(cap.get(cv2.CAP_PROP_FPS)), (W, H))
 
+# Path for output video
+video_path_out = 'videos/live_output.mp4'
+
+# Define the model path
 model_path = os.path.join('.', 'models', 'best1.pt')
 
 # Load a model
-model = YOLO(model_path)  # load a custom model
+model = YOLO(model_path)  # Load a custom model
 
 threshold = 0.5
 
 # Set the y-coordinate for the horizontal line
 line_y = int(H * 0.7)
-plastic_bag_count = 0
 plastic_bags_crossed_line = set()
 
 # Define a dictionary mapping class IDs to background colors
@@ -30,6 +28,10 @@ background_colors = {
     0: (0, 0, 255),    
     1: (0, 255, 255),
 }
+
+# Create a video writer
+out = cv2.VideoWriter(video_path_out, cv2.VideoWriter_fourcc(
+    *'MP4V'), 30, (W, H))
 
 while ret:
     results = model(frame)[0]
@@ -72,6 +74,13 @@ while ret:
 
     # Write the frame to the output video
     out.write(frame)
+
+    # Show the processed frame
+    cv2.imshow('Frame', frame)
+
+    # Break the loop when 'q' key is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
     # Read the next frame
     ret, frame = cap.read()
