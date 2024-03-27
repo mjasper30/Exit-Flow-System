@@ -4,7 +4,7 @@ import cv2
 
 # No need to specify the path for live camera
 
-cap = cv2.VideoCapture(0)  # Use the default camera (device index 0)
+cap = cv2.VideoCapture(1)  # Use the default camera (device index 0)
 ret, frame = cap.read()
 H, W, _ = frame.shape
 

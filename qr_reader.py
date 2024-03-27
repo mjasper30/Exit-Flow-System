@@ -5,7 +5,7 @@ import mysql.connector
 
 def read_qr_code_from_camera():
     # Initialize camera
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     
     # Connect to MySQL database
     db_connection = mysql.connector.connect(
