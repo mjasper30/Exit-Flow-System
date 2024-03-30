@@ -8,12 +8,16 @@ import mysql.connector
 # Establish a connection to MySQL
 mydb = mysql.connector.connect(
     host="localhost",
-    user="root",
-    password="",
+    user="thesis",
+    password="thesis",
     database="qr_codes"
 )
 
+data = ""
+
 def generate_qr():
+    global data
+    
     # Get the current timestamp to make the data unique
     timestamp = int(time.time())
     
@@ -41,8 +45,8 @@ def generate_qr():
 
     cursor.close()
 
-def open_qr_reader():
-    subprocess.Popen(["python", "qr_reader.py"])  # Open the QR reader script in a new process
+def open_qr_reader(data):
+    subprocess.Popen(["python", "qr_reader.py", str(data)]) # Open the QR reader script in a new process
 
 # Create main window
 root = tk.Tk()
@@ -69,7 +73,7 @@ generate_button = tk.Button(root, text="Generate", command=generate_qr)
 generate_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
 
 # Button to open QR reader window
-qr_reader_button = tk.Button(root, text="QR Reader", command=open_qr_reader)
+qr_reader_button = tk.Button(root, text="QR Reader", command=lambda: open_qr_reader(data))
 qr_reader_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
 
 # Label to display QR code
