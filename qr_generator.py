@@ -102,7 +102,7 @@ def print_receipt():
     pdf.image(f"qr_codes/qr_code_{timestamp}.png", x=20, y=78, w=40, h=40) # Add image (x, y, width, height
 
     # Save the pdf with name .pdf
-    pdf_file_name = "receipt.pdf"
+    pdf_file_name = f"print_qr_codes/qr_code_{timestamp}.pdf"
     pdf.output(pdf_file_name)
 
     # Open the PDF file
