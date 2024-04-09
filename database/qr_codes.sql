@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 27, 2024 at 04:20 AM
+-- Generation Time: Apr 09, 2024 at 08:35 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -32,6 +32,7 @@ CREATE TABLE `qr_codes` (
   `plastic_bag` int(11) NOT NULL,
   `box` int(11) NOT NULL,
   `paper_bag` int(11) NOT NULL,
+  `eco_bag` int(11) NOT NULL,
   `timestamp` text NOT NULL,
   `qr_code_path` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -40,12 +41,13 @@ CREATE TABLE `qr_codes` (
 -- Dumping data for table `qr_codes`
 --
 
-INSERT INTO `qr_codes` (`id`, `plastic_bag`, `box`, `paper_bag`, `timestamp`, `qr_code_path`) VALUES
-(1, 1, 1, 1, '1710937295', 'qr_codes/qr_code_1710937295.png'),
-(2, 1, 0, 0, '1711015225', 'qr_codes/qr_code_1711015225.png'),
-(3, 1, 0, 0, '1711015355', 'qr_codes/qr_code_1711015355.png'),
-(4, 1, 0, 0, '1711015460', 'qr_codes/qr_code_1711015460.png'),
-(5, 1, 0, 0, '1711015710', 'qr_codes/qr_code_1711015710.png');
+INSERT INTO `qr_codes` (`id`, `plastic_bag`, `box`, `paper_bag`, `eco_bag`, `timestamp`, `qr_code_path`) VALUES
+(1, 1, 2, 3, 4, '1712644038', 'qr_codes/qr_code_1712644038.png'),
+(2, 2, 1, 3, 4, '1712644067', 'qr_codes/qr_code_1712644067.png'),
+(3, 1, 2, 3, 4, '1712644097', 'qr_codes/qr_code_1712644097.png'),
+(4, 2, 2, 2, 2, '1712644183', 'qr_codes/qr_code_1712644183.png'),
+(5, 1, 0, 0, 1, '1712644263', 'qr_codes/qr_code_1712644263.png'),
+(6, 1, 0, 1, 1, '1712644330', 'qr_codes/qr_code_1712644330.png');
 
 -- --------------------------------------------------------
 
@@ -89,7 +91,7 @@ ALTER TABLE `status`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `status`
