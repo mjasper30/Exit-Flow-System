@@ -3,6 +3,8 @@ import time
 from pyzbar.pyzbar import decode
 import subprocess
 import RPi.GPIO as GPIO
+import os
+from ultralytics import YOLO
 import sys
 
 # GPIO pins for the ultrasonic sensor
@@ -10,12 +12,113 @@ TRIG = 23
 ECHO = 24
 
 # Set GPIO mode and pins
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TRIG, GPIO.OUT)
 GPIO.setup(ECHO, GPIO.IN)
 
-# Access the passed argument
-data = sys.argv[1]
+# Pin numbers for the LEDs
+green_pin = 17
+red_pin = 18
+
+# Set up GPIO
+GPIO.setwarnings(False)  # Disable warnings
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(green_pin, GPIO.OUT)
+GPIO.setup(red_pin, GPIO.OUT)
+
+IMAGES_DIR = os.path.join('.', 'images')
+OUTPUT_DIR = os.path.join('.', 'output')
+
+# Ensure the output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+model_path = os.path.join('.', 'models', 'best2.pt')
+
+# Load a model
+model = YOLO(model_path)  # load a custom model
+
+threshold = 0.5
+distance_threshold = 380
+
+# Define a dictionary mapping class IDs to background colors
+background_colors = {
+    0: (0, 0, 255),    
+    1: (0, 255, 255),
+}
+
+def turn_on_led(pin):
+    # Turn on LED
+    for _ in range(3):
+        GPIO.output(pin, GPIO.HIGH)
+        time.sleep(0.5)
+        GPIO.output(pin, GPIO.LOW)
+        time.sleep(0.5)
+
+# Function to turn on green LED
+def turn_on_green():
+    turn_on_led(green_pin)
+
+# Function to turn on red LED
+def turn_on_red():
+    turn_on_led(red_pin)
+def process_image(image_path, output_path, qr_data):
+    # Read the image
+    frame = cv2.imread(image_path)
+    H, W, _ = frame.shape
+
+    results = model(frame)[0]
+
+    plastic_bag_count = 0  # Initialize count of plastic bags
+    box_count = 0
+    paper_bag_count = 0
+    eco_bag_count = 0
+
+    for result in results.boxes.data.tolist():
+        x1, y1, x2, y2, score, class_id = result
+
+        if score > threshold:
+            # Draw bounding box and label on the image
+            background_color = background_colors.get(int(class_id), (255, 0, 0))
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), background_color, 2)
+            class_label = results.names[int(class_id)].upper()
+            text = f'{class_label} {score:.2f}'
+            cv2.putText(frame, text, (int(x1), int(y1) - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+            # Increment count based on class
+            print(class_label)
+            if class_label == 'PLASTIC-BAG':
+                plastic_bag_count += 1
+            elif class_label == 'BOX':
+                box_count += 1
+            elif class_label == 'PAPER-BAG':
+                paper_bag_count += 1
+            elif class_label == 'ECO-BAG':
+                eco_bag_count += 1
+
+    # Overlay counts on the top left side of the image
+    cv2.putText(frame, f'Plastic Bags: {plastic_bag_count}', (20, 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f'Boxes: {box_count}', (20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f'Paper Bags: {paper_bag_count}', (20, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f'Eco Bags: {eco_bag_count}', (20, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
+    # Save the processed image to the output folder
+    cv2.imwrite(output_path, frame)
+
+    if plastic_bag_count == int(qr_data_array[0]) and box_count == int(qr_data_array[1]) and paper_bag_count == int(qr_data_array[2]) and eco_bag_count == int(qr_data_array[3]):
+        print("Accepted")
+        turn_on_green()
+    else:
+        print("Rejected")
+        turn_on_red()
+
+    # Cleanup GPIO settings
+    data = ""
 
 def distance():
     # Send a pulse to trigger the ultrasonic sensor
@@ -39,7 +142,6 @@ def distance():
     return distance
 
 def read_qr_code_from_camera():
-    global data
     # Initialize camera
     cap = cv2.VideoCapture(0)
     
@@ -58,18 +160,27 @@ def read_qr_code_from_camera():
             decoded_objects = decode(gray_frame)
             
             # Print results
-            for obj in decoded_objects:
-                print("Data:", obj.data.decode("utf-8"))
-                print("Type:", obj.type)
-                print()
-                
-                #print("Camera is now ready to scan objects")
-                
+            for obj in decoded_objects:                
                 qr_decoded = True  # Set the flag to True to break out of the loop
+                qr_data = obj.data.decode("utf-8")  # Store the decoded data
                 
-                break
-        
+                # Split the data into an array based on a delimiter (assuming comma in this case)
+                qr_data_array = qr_data.split(',')
+                
+                print("-------------------QR Receipt Data-------------------")
+                print("Number of Plastic Bag:", qr_data_array[0])
+                print("Number of Box:", qr_data_array[1])
+                print("Number of Paper Bag:", qr_data_array[2])
+                print("Number of Eco Bag:", qr_data_array[3])
+                print("Timestamp:", qr_data_array[4])
+                print("-----------------------------------------------------")
+                
+                # Return the decoded data array
+                return qr_data_array
+
+        # Close the camera window if QR code is decoded
         if qr_decoded:
+            cv2.destroyAllWindows()
             break
             
         # Display the frame
@@ -79,37 +190,67 @@ def read_qr_code_from_camera():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             qr_decoded = False
             break
-        
-    # Release the camera and close the window
+
+    # Release the video capture object and close the camera
     cap.release()
-    cv2.destroyAllWindows()
-    
+
+def pass_in(qr_data):
     # Ultrasonic sensor
     while True:
         dist = distance()
-        print("Distance:", dist, "cm")
-            
+        print("Distance:", int(dist), "cm")
+                
         # If someone passes by (distance less than a threshold), break the loop
-        if dist < 30:  # You can adjust this threshold according to your requirements
+        if dist < distance_threshold:  # You can adjust this threshold according to your requirements
             print("Someone passed by!")
             break
-            
+                
         time.sleep(0.1)  # Small delay to reduce CPU usage
-    
-    # Call yolo_process function
-    capture_camera()
-    
-    # Call yolo_process function
-    yolo_process(data)
 
 def capture_camera():
-    subprocess.Popen(["python", "capture_camera.py"])
+    cam_port = 2
+    cam = cv2.VideoCapture(cam_port)
 
-def yolo_process(data):
-    subprocess.Popen(["python", "yolo_process.py", str(data)])
+    # reading the input using the camera
+    result, image = cam.read()
 
-# Now you can use the data variable in your qr_reader.py script
-print(data)  # Just an example usage
+    # If an image is detected without any error, show the result
+    if result:
 
-# Call the function to start reading QR codes from camera
-read_qr_code_from_camera()
+        # showing result, it takes frame name and image output
+        cv2.imshow("Capture Image", image)
+        print("Captured!")
+
+        # saving the image in local storage
+        cv2.imwrite("images/capture.png", image)
+        print("Image is now save on folder!")
+
+        # If a keyboard interrupt occurs, destroy the image window
+        #waitKey(0)
+        cv2.destroyWindow("Capture Image")
+        # Release the video capture object and close the camera
+        cam.release()
+
+    # If the captured image is corrupted, move to the else part
+    else:
+        print("No image detected. Please try again")
+
+def yolo_process(qr_data):
+    # Iterate over images in the input directory
+    for filename in os.listdir(IMAGES_DIR):
+        if filename.endswith('.jpg') or filename.endswith('.png'):
+            image_path = os.path.join(IMAGES_DIR, filename)
+            output_path = os.path.join(OUTPUT_DIR, filename)
+            process_image(image_path, output_path, qr_data)
+            print(f"Processed {filename} and saved to {output_path}")
+
+while True:
+    qr_data_array = read_qr_code_from_camera()
+    pass_in(qr_data_array)
+    capture_camera()
+    yolo_process(qr_data_array)
+    
+    # Break the loop if 'q' is pressed again
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        GPIO.cleanup()
+        break
