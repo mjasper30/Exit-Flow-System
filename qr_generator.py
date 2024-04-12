@@ -70,7 +70,7 @@ def print_receipt():
     global timestamp
 
     # Create instance of FPDF class
-    pdf = FPDF(orientation='P', unit='mm', format=(43, 72))  # Specify custom paper format here
+    pdf = FPDF(orientation='P', unit='mm', format=(48, 72))  # Specify custom paper format here
 
     # Add a page
     pdf.add_page()
@@ -101,7 +101,7 @@ def print_receipt():
     pdf.cell(0, 2, 'Number of Eco Bag: ' + eco_bag.get(), ln=True, align='C')
 
     # Example with local image
-    pdf.image(f"qr_codes/qr_code_{timestamp}.png", x=12, y=45, w=20, h=20) # Add image (x, y, width, height
+    pdf.image(f"qr_codes/qr_code_{timestamp}.png", x=14, y=45, w=20, h=20) # Add image (x, y, width, height
 
     # Save the pdf with name .pdf
     pdf_file_name = "receipt.pdf"
