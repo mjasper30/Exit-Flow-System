@@ -70,36 +70,38 @@ def print_receipt():
     global timestamp
 
     # Create instance of FPDF class
-    pdf = FPDF(orientation='P', unit='mm', format=(80, 130))  # Specify custom paper format here
+    pdf = FPDF(orientation='P', unit='mm', format=(43, 72))  # Specify custom paper format here
 
     # Add a page
     pdf.add_page()
 
     # Header
-    pdf.set_font("Arial", size=10)
-    pdf.cell(0, 10, 'EXIT FLOW SYSTEM', ln=True, align='C')
-    pdf.set_font("Arial", size=8)
-    pdf.cell(0, 5, '524 P. Ramos St. Caloocan City', ln=True, align='C')
-    pdf.cell(0, 5, '347-4567-2314', ln=True, align='C')
-    pdf.cell(0, 5, 'exitflow@gmail.com', ln=True, align='C')
+    pdf.set_font("Arial", size=8, style='B')
+    pdf.cell(0, 5, 'EXIT FLOW SYSTEM', ln=True, align='C')
+    pdf.set_font("Arial", size=5)
+    pdf.cell(0, 2, '524 P. Ramos St. Caloocan City', ln=True, align='C')
+    pdf.cell(0, 2, '347-4567-2314', ln=True, align='C')
+    pdf.cell(0, 2, 'exitflow@gmail.com', ln=True, align='C')
     pdf.ln(2)  # Add some space
 
     # Date and time generated
-    pdf.set_font("Arial", size=6)
-    pdf.cell(0, 5, 'Date: ' + date_generated, ln=True, align='L')
-    pdf.cell(0, 5, 'Time: ' + time_generated, ln=True, align='L')
+    pdf.set_font("Arial", size=4, style='B')
+    pdf.cell(0, 2, 'Date: ' + date_generated, ln=True, align='C')
+    pdf.cell(0, 2, 'Time: ' + time_generated, ln=True, align='C')
+    pdf.ln(3)  # Add some space
 
     # Exit Details
-    pdf.set_font("Arial", size=10, style='B')
-    pdf.cell(0, 10, 'Exit Details', ln=True, align='C')
-    pdf.set_font("Arial", size=8)
-    pdf.cell(0, 5, 'Number of Plastic Bag: ' + plastic_bag.get(), ln=True)
-    pdf.cell(0, 5, 'Number of Box: ' + box.get(), ln=True)
-    pdf.cell(0, 5, 'Number of Paper Bag: ' + paper_bag.get(), ln=True) 
-    pdf.cell(0, 5, 'Number of Eco Bag: ' + eco_bag.get(), ln=True)
+    pdf.set_font("Arial", size=7, style='B')
+    pdf.cell(0, 4, 'Exit Details', ln=True, align='C')
+    pdf.ln(2)  # Add some space
+    pdf.set_font("Arial", size=4)
+    pdf.cell(0, 2, 'Number of Plastic Bag: ' + plastic_bag.get(), ln=True, align='C')
+    pdf.cell(0, 2, 'Number of Box: ' + box.get(), ln=True, align='C')
+    pdf.cell(0, 2, 'Number of Paper Bag: ' + paper_bag.get(), ln=True, align='C') 
+    pdf.cell(0, 2, 'Number of Eco Bag: ' + eco_bag.get(), ln=True, align='C')
 
     # Example with local image
-    pdf.image(f"qr_codes/qr_code_{timestamp}.png", x=20, y=78, w=40, h=40) # Add image (x, y, width, height
+    pdf.image(f"qr_codes/qr_code_{timestamp}.png", x=12, y=45, w=20, h=20) # Add image (x, y, width, height
 
     # Save the pdf with name .pdf
     pdf_file_name = "receipt.pdf"
