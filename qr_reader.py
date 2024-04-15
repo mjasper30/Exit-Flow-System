@@ -6,26 +6,32 @@ import RPi.GPIO as GPIO
 import os
 from ultralytics import YOLO
 import sys
+from gpiozero import Buzzer
+from time import sleep
 
 # GPIO pins for the ultrasonic sensor
 TRIG = 23
 ECHO = 24
+buzzer_pin = 25
 
 # Set GPIO mode and pins
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TRIG, GPIO.OUT)
 GPIO.setup(ECHO, GPIO.IN)
+GPIO.setup(buzzer_pin, GPIO.OUT)
 
 # Pin numbers for the LEDs
 green_pin = 17
 red_pin = 18
+yellow_pin = 27
 
 # Set up GPIO
 GPIO.setwarnings(False)  # Disable warnings
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(green_pin, GPIO.OUT)
 GPIO.setup(red_pin, GPIO.OUT)
+GPIO.setup(yellow_pin, GPIO.OUT)
 
 IMAGES_DIR = os.path.join('.', 'images')
 OUTPUT_DIR = os.path.join('.', 'output')
@@ -33,19 +39,33 @@ OUTPUT_DIR = os.path.join('.', 'output')
 # Ensure the output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-model_path = os.path.join('.', 'models', 'best2.pt')
+model_path = os.path.join('.', 'models', 'best3.pt')
 
 # Load a model
 model = YOLO(model_path)  # load a custom model
 
 threshold = 0.5
-distance_threshold = 380
+distance_threshold = 80 # ADJUST HERE DISTANCE THRESHOLD
 
 # Define a dictionary mapping class IDs to background colors
 background_colors = {
     0: (0, 0, 255),    
     1: (0, 255, 255),
 }
+
+def accept_sound():
+    # Play accept sound with higher pitch
+    buzzer = GPIO.PWM(buzzer_pin, 1000)  # 1000 Hz frequency
+    buzzer.start(50)  # 50% duty cycle
+    sleep(0.5)
+    buzzer.stop()
+    
+def reject_sound():
+    # Play reject sound with higher pitch
+    buzzer = GPIO.PWM(buzzer_pin, 1500)  # 1500 Hz frequency
+    buzzer.start(50)  # 50% duty cycle
+    sleep(0.2)
+    buzzer.stop()
 
 def turn_on_led(pin):
     # Turn on LED
@@ -62,6 +82,11 @@ def turn_on_green():
 # Function to turn on red LED
 def turn_on_red():
     turn_on_led(red_pin)
+    
+# Function to turn on red LED
+def turn_on_yellow():
+    turn_on_led(yellow_pin)
+    
 def process_image(image_path, output_path, qr_data):
     # Read the image
     frame = cv2.imread(image_path)
@@ -106,19 +131,39 @@ def process_image(image_path, output_path, qr_data):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.putText(frame, f'Eco Bags: {eco_bag_count}', (20, 80),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    
+    print("-------------------YOLO PROCESS INFORMATION-------------------")
+    print("Number of Plastic Bag Detected:", plastic_bag_count)
+    print("Number of Box Detected:", box_count)
+    print("Number of Paper Bag Detected:", paper_bag_count)
+    print("Number of Eco Bag Detected:", eco_bag_count)
+    print("---------------------------------------------------------------")
 
     # Save the processed image to the output folder
     cv2.imwrite(output_path, frame)
 
     if plastic_bag_count == int(qr_data_array[0]) and box_count == int(qr_data_array[1]) and paper_bag_count == int(qr_data_array[2]) and eco_bag_count == int(qr_data_array[3]):
         print("Accepted")
+        accept_sound()
         turn_on_green()
     else:
         print("Rejected")
-        turn_on_red()
+        #Turn on red led
+        GPIO.output(red_pin, GPIO.HIGH)
+        
+        # Play reject sound 5 times
+        for _ in range(5):
+            GPIO.output(red_pin, GPIO.HIGH)
+            reject_sound()
+            GPIO.output(red_pin, GPIO.LOW)
+            time.sleep(1)
+        
+        #Turn off red led
 
-    # Cleanup GPIO settings
     data = ""
+    
+    #Turn on yellow led
+    GPIO.output(yellow_pin, GPIO.LOW)
 
 def distance():
     # Send a pulse to trigger the ultrasonic sensor
@@ -143,7 +188,7 @@ def distance():
 
 def read_qr_code_from_camera():
     # Initialize camera
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     
     # Flag to track if a QR code has been decoded in the current frame
     qr_decoded = False
@@ -174,6 +219,7 @@ def read_qr_code_from_camera():
                 print("Number of Eco Bag:", qr_data_array[3])
                 print("Timestamp:", qr_data_array[4])
                 print("-----------------------------------------------------")
+                accept_sound()
                 
                 # Return the decoded data array
                 return qr_data_array
@@ -195,6 +241,9 @@ def read_qr_code_from_camera():
     cap.release()
 
 def pass_in(qr_data):
+    #Turn on yellow led
+    GPIO.output(yellow_pin, GPIO.HIGH)
+    
     # Ultrasonic sensor
     while True:
         dist = distance()
@@ -203,12 +252,13 @@ def pass_in(qr_data):
         # If someone passes by (distance less than a threshold), break the loop
         if dist < distance_threshold:  # You can adjust this threshold according to your requirements
             print("Someone passed by!")
-            break
+            accept_sound()
+            break # Comment this to adjust the distance threshold
                 
         time.sleep(0.1)  # Small delay to reduce CPU usage
 
 def capture_camera():
-    cam_port = 2
+    cam_port = 0
     cam = cv2.VideoCapture(cam_port)
 
     # reading the input using the camera
